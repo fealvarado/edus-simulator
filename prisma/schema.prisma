@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────
+
+enum Genero {
+  Masculino
+  Femenino
+  Otro
+}
+
+enum EstadoCita {
+  Pendiente
+  En_Atencion
+  Finalizada
+}
+
+// ─── Models ──────────────────────────────────────────────────────────
+
+model Patient {
+  id               Int           @id @default(autoincrement())
+  dni              String        @unique
+  nombre           String
+  apellidos        String
+  fecha_nacimiento DateTime
+  genero           Genero
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  appointments     Appointment[]
+
+  @@map("patients")
+}
+
+model Appointment {
+  id              Int              @id @default(autoincrement())
+  patient_id      Int
+  fecha_hora      DateTime
+  estado          EstadoCita       @default(Pendiente)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  patient         Patient          @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  clinicalRecord  ClinicalRecord?
+
+  @@map("appointments")
+}
+
+model ClinicalRecord {
+  id              Int             @id @default(autoincrement())
+  appointment_id  Int             @unique
+  notas_medicas   String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  appointment     Appointment     @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  codingRecords   CodingRecord[]
+
+  @@map("clinical_records")
+}
+
+model Cie10Catalog {
+  id            Int             @id @default(autoincrement())
+  codigo        String          @unique
+  descripcion   String
+  codingRecords CodingRecord[]
+
+  @@map("cie10_catalog")
+}
+
+model CodingRecord {
+  id                  Int             @id @default(autoincrement())
+  clinical_record_id  Int
+  cie10_id            Int
+  user_id             String
+  fecha_codificacion  DateTime        @default(now())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  clinicalRecord      ClinicalRecord  @relation(fields: [clinical_record_id], references: [id], onDelete: Cascade)
+  cie10               Cie10Catalog    @relation(fields: [cie10_id], references: [id])
+
+  @@map("coding_records")
+}

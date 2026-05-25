@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EDUS Simulator — Expediente Digital Único en Salud
 
-## Getting Started
+Simulador de Expediente Digital Único en Salud (EDUS) enfocado en estudiantes de Registros Médicos. Permite practicar la codificación CIE-10 a partir de notas clínicas.
 
-First, run the development server:
+## Stack Tecnológico
+
+- **Framework:** Next.js 16 (App Router, TypeScript)
+- **Estilos:** Tailwind CSS v4 + shadcn/ui
+- **Base de datos:** PostgreSQL
+- **ORM:** Prisma
+
+## Requisitos Previos
+
+- Node.js ≥ 20
+- PostgreSQL ≥ 14 (corriendo localmente o en Docker)
+- npm
+
+## Instalación
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Clonar el repositorio
+git clone <url-del-repo>
+cd edus-simulator
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales de PostgreSQL si difieren del default
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuración de la Base de Datos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 4. Crear la base de datos (si no existe)
+createdb edus_simulator
+# O desde psql:
+# psql -U postgres -c "CREATE DATABASE edus_simulator;"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 5. Generar el cliente Prisma
+npm run db:generate
 
-## Learn More
+# 6. Ejecutar migraciones (crea las tablas)
+npm run db:migrate
 
-To learn more about Next.js, take a look at the following resources:
+# 7. Poblar la base de datos con datos de prueba
+npm run db:seed
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 8. (Opcional) Abrir Prisma Studio para explorar los datos
+npm run db:studio
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Alternativa con Docker (PostgreSQL)
 
-## Deploy on Vercel
+Si prefieres usar Docker en lugar de una instalación local de PostgreSQL:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+docker run --name edus-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=edus_simulator \
+  -p 5432:5432 \
+  -d postgres:16-alpine
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts Disponibles
+
+| Comando             | Descripción                                    |
+| ------------------- | ---------------------------------------------- |
+| `npm run dev`       | Inicia el servidor de desarrollo               |
+| `npm run build`     | Construye la aplicación para producción        |
+| `npm run start`     | Inicia el servidor de producción               |
+| `npm run lint`      | Ejecuta ESLint                                 |
+| `npm run db:generate` | Genera el cliente Prisma                     |
+| `npm run db:migrate`  | Ejecuta migraciones de Prisma                |
+| `npm run db:seed`     | Ejecuta el seed de datos de prueba           |
+| `npm run db:reset`    | Resetea la DB y re-ejecuta migraciones+seed  |
+| `npm run db:studio`   | Abre Prisma Studio (GUI para explorar datos) |
+
+## Modelo de Datos
+
+```
+Patient (1) ──── (N) Appointment (1) ──── (1) ClinicalRecord (1) ──── (N) CodingRecord
+                                                                              │
+                                                                       Cie10Catalog
+```
+
+- **Patient:** Datos demográficos del paciente (DNI, nombre, fecha de nacimiento, género).
+- **Appointment:** Citas médicas con estado (Pendiente, En_Atencion, Finalizada).
+- **ClinicalRecord:** Notas médicas asociadas a cada cita (1:1).
+- **Cie10Catalog:** Catálogo de códigos CIE-10.
+- **CodingRecord:** Registro de codificación realizado por un estudiante.
+
+## Datos de Seed
+
+El seed incluye:
+- **5 pacientes** de prueba con datos costarricenses.
+- **20 códigos CIE-10** representativos y comunes.
+- **3 citas** con notas clínicas descriptivas que los estudiantes pueden leer para deducir el código CIE-10 correcto.
